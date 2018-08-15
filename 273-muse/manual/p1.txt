@@ -1,0 +1,4 @@
+.frame :exit # hi
+{
+  .trap 1 ;
+}

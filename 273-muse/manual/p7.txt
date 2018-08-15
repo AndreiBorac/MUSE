@@ -1,0 +1,42 @@
+.defer :main
+.defer :exit
+
+.frame :start
+{
+  .invoke :main @0 ;
+  .invoke :exit @0 ;
+}
+
+.frame :exit
+{
+  .trap 1 ;
+}
+
+.frame :read
+{
+  .trap 2 ;
+  .return @0
+}
+
+.frame :emit %n!
+{
+  . , %n ;
+  .trap 3 ;
+  .return @0
+}
+
+.slice :message 4 0x68 0x69 0x21 0x00 0x11 0x22 0x33 ; # "hi!\0"
+
+.frame :main
+{
+  .scope :_ z = %base! z = %temp! ;
+  {
+    . 0=r ;
+    .trap 0 ;
+    . r = %base ;
+    
+    .invoke :emit @0 :message_off = %temp >>1 >>1 + %base [] = %! ;
+    
+    .return @0
+  }
+}

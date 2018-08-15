@@ -1,0 +1,21 @@
+===
+= MUSE instruction reference
+===
+
+- 1 trap instruction (mnemonic xTRAP) supporting data embedding
+---> versatile value specifies the number of bytes of data
+---> by convention, zero bytes does not trap; it is a NOP
+- 2 unary operator instructions (banks of 8 primitives each, mnemonic rURY)
+- 2*10 binary operator instructions (mnemonics rBIN and wBIN)
+- 3 sign-extending immediate loading instructions (1-byte, 1-byte plus one negated, and entire-word-load)
+---> loading an immediate assigns to both "r" and the referenced stack location (mnemonic cIMM)
+- 2 stack adjusting instructions (mnemonic sADJ)
+---> versatile value specifies the amount to adjust by (nonzero)
+- 1 jump instruction (6 conditions plus always and never)
+---> followed by one relative address byte
+- 1 invoke instruction (mnemonic iFUN)
+---> versatile value specifies the number of relative address bytes
+---> currently, only 2 is supported; not 1, not 3
+- 1 return instruction (mnemonic iRET)
+---> versatile value specifies number of stack values to be popped before the return address
+- 1 unused opcode

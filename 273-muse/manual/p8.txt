@@ -1,0 +1,36 @@
+.defer :main
+.defer :exit
+
+.frame :start
+{
+  .invoke :main @0 ;
+  .invoke :exit @0 ;
+}
+
+.frame :exit
+{
+  .trap 1 ;
+}
+
+.frame :read
+{
+  .trap 2 ;
+  .return @0
+}
+
+.frame :emit %n!
+{
+  . , %n ;
+  .trap 3 ;
+  .return @0
+}
+
+.frame :main
+{
+  .scope :_ z = %TEMP! ;
+  {
+    .invoke :emit @0 1000 = %TEMP +( 7 = %TEMP ^( 3 = %TEMP ) ) = %! ;
+  }
+  
+  .return @0
+}

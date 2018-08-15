@@ -1,0 +1,56 @@
+.defer :main
+.defer :exit
+
+.frame :start
+{
+  .invoke :main @0 ;
+  .invoke :exit @0 ;
+}
+
+.frame :exit
+{
+  .trap 1 ;
+}
+
+.frame :read
+{
+  .trap 2 ;
+  .return @0
+}
+
+.frame :emit %n!
+{
+  . , %n ;
+  .trap 3 ;
+  .return @0
+}
+
+.frame :emit_bcd_pair %a! %b!
+{
+  .scope :_ 3 = %c3! ;
+  {
+    .invoke :emit @0 , %a << %c3 + %a + %a + %b = %! ;
+    .return @0
+  }
+}
+
+.const :COUNT_TO 5
+
+.frame :main
+{
+  .scope :_ -1=r = %i!  :COUNT_TO = %n! ;
+  {
+    .while :_ NZ , %i +1 = %i - %n ;
+    {
+      .scope :_ -1=r = %j! ;
+      {
+        .while :_ NZ , %j +1 = %j - %n ;
+        {
+          .invoke :emit_bcd_pair @0  , %i = %!  , %j = %! ;
+        }
+      }
+    }
+    
+    .return @0
+  }
+}

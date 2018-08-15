@@ -1,0 +1,42 @@
+eg 3
+er 1
+nx
+
+eg 3
+er 2
+nx
+
+eg 3
+er 3
+nx
+
+eg 3
+er 4
+nx
+
+eg 3
+er 5
+nx
+
+eg 3
+er 6
+nx
+
+eg 3
+er 7
+nx
+
+eg 3
+er 8
+nx
+
+eg 3
+er 9
+nx
+
+eg 3
+er 10
+nx
+
+eg 1
+br

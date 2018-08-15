@@ -1,0 +1,230 @@
+===
+= MUSE programmer's guide (version two)
+===
+
+MUSE stands for "maximally uncomplicated scripting environment". the
+goal of MUSE is to enable scripts to manipulate data while achieving
+as small code size as possible. the small code size requirement
+applies to the sum of the script code and to the interpreter that will
+be required to execute it. therefore, it is intended for the language
+to be "simple" while enabling complex operations to be expressed
+compactly.
+
+the virtual architecture includes a single register "r", a variable
+stack "s" on which variables can be allocated, an unwind stack "u" on
+which the register can be stashed, and a data memory "m".
+
+the variable and unwind stacks should be normally be considered as
+separate from data memory (i.e., variables on the stack cannot be
+accessed through memory operations). this is enforced by the MUSE
+interpreter. of course, system-specific hacks could allow access of
+the stacks through memory, and the interpreter could be modified to
+emulate this. there just doesn't seem to be a compelling reason to do
+it.
+
+the following constructs are allowed at the file scope in MUSE:
+
+.slice :label (integers)                                  - inject arbitrary bytes into the instruction stream (not yet implemented)
+.const :label 123456                                      - define a constant
+.defer :label                                             - declare a function
+.frame :label %arg1! %arg2! ... %argN! { ... }            - define a function
+
+the most interesting is "frame", which allows defining functions. as
+in most high-level languages, function contents in the MUSE
+programming language are formed of statements and
+expressions. statements are of the following kinds:
+
+. (expression)                                            - evaluate the expression ("expression statement")
+.trap (integers)                                          - execute an environment handler
+.continue/.break :label                                   - as in C
+.return                                                   - return from the current function (by convention, the return value is in "r")
+.invoke :label @hidden (expression)                       - evaluate the expression and invoke the named function with the given number of hidden arguments
+.if (condition) (expression) { ... } .else { ... }        - as in C
+.scope :label (expression) { ... }                        - execute the block once; like do { ... } while (false) in C
+.while :label (condition) (expression) { ... }            - as in C
+.for :label (expression) (condition) (expression) { ... } - as in C
+
+(conditions) may be chosen from among:
+
+AW - ( (true)) - always
+NW - (!(true)) - never
+
+EZ - ( (r == 0)) - when "r" is zero
+NZ - (!(r == 0)) - when not
+
+SP - ( (r > 0)) - when "r" is strictly positive (signed comparison)
+NP - (!(r > 0)) - when not
+
+SN - ( (r < 0)) - when "r" is strictly negative (signed comparison)
+NN - (!(r < 0)) - when not
+
+(integer)s and (expression)s must be terminated by the token ";"
+
+expressions are interpreted left-to-right. the value of "r" propagates
+linearly from one operator to the next. unary operators involve "r"
+only, while binary operators involve "r" and a variable. a variable is
+referenced through the syntax "%v" if it is already reserved or "%v!"
+to reserve it. reserving a variable allocates a stack location for
+it. uniqueness of the name is not checked; shadowing is permitted.
+
+normally, all variables allocated in a statement are deallocated at
+the end of the statement. for example, every expression statement (a
+". (expression)" construct) gets it's own private scope and any
+variables allocated in it cannot be referenced after the terminating
+semicolon. the only exceptions to this rule are expressions following
+".scope" and ".for" statements; these expressions' allocated variables
+remain available in the following block (but not thereafter). this
+only applies to the first "initializer" expression of the "for", and
+not to the test expression of the "for". in the case of ".invoke", all
+allocated variables stay allocated on the stack until after the
+function call returns.
+
+it is possible to allocate an anonymous variable using "%!". such a
+variable can be written only once, through an expression such as "0=r
+= %!", which places 0 in an anonymous variable. the anonymous variable
+can be a function argument. (invoking an n-argument function causes
+the top n elements on the stack to be treated as arguments).
+
+(expression)s are formed of:
+
+unary operators - see below
+
+binary operators - see below
+
+parenthesized expressions - see below
+
+binary-operator-constant expressions - see below
+
+z = %i! - pure variable allocation. the preceding example allocates
+variable "i" on the stack without generating any code. of course, the
+initial value is undefined; use, e.g., "0=r = %i!" to initialize to
+zero.
+
++5 or + :offset_field - constant addition. the given constant is added
+to "r"; it may be an integer literal or a label referencing a ".const"
+declaration. the value must be in the range 1 through 8
+(inclusive). update: this is now a special case of the more general
+binary-operator-constant expression.
+
+123456 = %n - constant loading. constants -must- be loaded into a
+variable, they cannot be loaded into "r" only. of course, constants
+are also loaded into "r", so any constant loading expression trashes
+the previous value in "r". it is possible to load a constant into an
+anonymous variable (typically for an argument to a function).
+
+note that binary operators are used for saving and loading the
+register from variables:
+
+", %v" - loads %v into the register
+"= %v" - saves the register into %v
+
+an expression may not normally begin with an operation that consumes
+"r":
+
+". +1 = %unknown_plus_one ;"
+
+the above would result in an error due to a "headless pipe". it is
+cleaner to have expressions that don't assume anything about
+"r". sometimes there are legitimate reasons to access "r" at the start
+of an expression (such as immediately following function
+invocation). for these times, the expression can use the special
+operator "r" to bypass the compile error:
+
+".invoke :flubber @0 ;"
+". r +1 = %returned_value_plus_one ;"
+
+in the future, the compiler may be extended to warn on additional
+dubious constructs; for now, relatively little sanity checking is
+done.
+
+the unary operators .STO and .RCL utilize the "unwind" stack. since
+the unwind stack is also used for implementing function calls, every
+function call must be "balanced"; i.e., the sequence of STO and RCL
+operations performed by a function must be generated by the grammar S
+-> e | S ; S -> SS ; S -> STO RCL. of course, these STO and RCL
+operations may be arbitrarily interspersed with calls to other
+functions.
+
+parenthesized expressions are defined in terms of existing operations:
+
+  A *( B )   [expands to]   A .STO B = %TEMP .RCL * %TEMP
+
+where "*" is any non-exported binary operator (a binary operator is
+"exported" if it assigns to the rhs variable). the exported operators
+are formed of all v* operators except vIND.
+
+similarily, binary-operator-constant expressions are defined in terms
+of existing operators:
+
+  A * :L   [expands to]   A .STO :L = %TEMP .RCL * %TEMP
+
+where "*" is again any non-exported binary operator.
+
+===
+= UNARY
+===
+
+.CLR or 0=r          ::: r = 0
+.UNI or 1=r          ::: r = 1
+.SET or -1=r or ~0=r ::: r = -1
+
+.DRF or []           ::: r = m[r]
+.STO                 ::: push(r)
+.RCL                 ::: r = pop()
+
+.INV or ~            ::: r = ~r
+.NEG or 0-           ::: r = -r
+.DEC or -1           ::: r = r-1
+
+.RSA or >>1          ::: r = r>>1   (arithmetic)
+.RSL or >>>1         ::: r = r>>>1  (logical)
+.RSR or >>>>1        ::: r = r>>>>1 (rotate)
+
+.LS1 or <<1          ::: r = r<<1
+.LS2 or <<2          ::: r = r<<2
+.LS3 or <<3          ::: r = r<<3
+.LS4 or <<4          ::: r = r<<4
+
+.RVB                 ::: r = (reverse order of bits of r)
+.RVY                 ::: r = (reverse order of bytes of r (i.e., swap endianness))
+.DTB                 ::: r = ("detonate" bits of r)
+.DTY                 ::: r = ("detonate" bytes of r)
+
+.SLS                 ::: r = (zero-based index of least significant bit set in r, or -1 if (r == 0))
+.SMS                 ::: r = (zero-based index of most significant bit set in r, or -1 if (r == 0))
+.EXP                 ::: r = (1<<r) # such that r becomes 0 if r is greater than or equal to the word size; r is treated as unsigned
+.LOG                 ::: r = (smallest q such that (r <= (1<<q)) under unsigned comparison, or -1 if not satisfiable)
+
+===
+= BINARY
+===
+
+rMOV    ,     ::: r = v;
+rIND or []<== ::: m[r] = v;
+
+rAND or &     ::: r &= v;
+rIOR or |     ::: r |= v;
+rXOR or ^     ::: r ^= v;
+
+rADD or +     ::: r += v;
+rSUB or -     ::: r -= v;
+
+rSHL or <<    ::: r <<= v;
+rSAR or >>    ::: r >>= v; (arithmetic)
+rSLR or >>>   ::: r >>>= v; (logical)
+rSRR or >>>>  ::: r >>>>= v; (rotate)
+
+vMOV    =     ::: v = r;
+vIND or ==>[] ::: m[v] = r;
+
+vAND or =&    ::: v &= r;
+vIOR or =|    ::: v |= r;
+vXOR or =^    ::: v ^= r;
+
+vADD or =+    ::: v += r;
+vSUB or =-    ::: v -= r;
+
+vSHL or =<<   ::: v <<= r;
+vSAR or =>>   ::: v >>= r; (arithmetic)
+vSLR or =>>>  ::: v >>>= r; (logical)
+vSRR or =>>>> ::: v >>>>= r; (rotate)

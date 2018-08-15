@@ -1,0 +1,58 @@
+.defer :main
+.defer :exit
+
+.frame :start
+{
+  .invoke :main @0 ;
+  .invoke :exit @0 ;
+}
+
+.frame :exit
+{
+  .trap 1 ;
+}
+
+.frame :read
+{
+  .trap 2 ;
+  .return @0
+}
+
+.frame :emit %n!
+{
+  . , %n ;
+  .trap 3 ;
+  .return @0
+}
+
+.const :FST 1
+.const :SND 2
+.const :TRD 3
+
+.frame :main
+{
+  .scope :_ z = %TEMP! ;
+  {
+    .for :_ 1 = %i! ; NN 4 = %TEMP - %i ; , %i +1 = %i ;
+    {
+        .if EZ 1 = %TEMP - %i ;
+      {
+        .invoke :emit @0 1009 = %! ;
+      }
+      .elif EZ 2 = %TEMP - %i ;
+      {
+        .invoke :emit @0 1013 = %! ;
+      }
+      .elif EZ 3 = %TEMP - %i ;
+      {
+        .invoke :emit @0 1019 = %! ;
+      }
+      .else
+      {
+        .invoke :emit @0 1021 = %! ;
+      }
+    }
+  }
+  
+  .return @0
+}

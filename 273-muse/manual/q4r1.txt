@@ -1,0 +1,102 @@
+eg 3
+er 0
+nx
+
+eg 3
+er 1
+nx
+
+eg 3
+er 2
+nx
+
+eg 3
+er 3
+nx
+
+eg 3
+er 4
+nx
+
+eg 3
+er 10
+nx
+
+eg 3
+er 11
+nx
+
+eg 3
+er 12
+nx
+
+eg 3
+er 13
+nx
+
+eg 3
+er 14
+nx
+
+eg 3
+er 20
+nx
+
+eg 3
+er 21
+nx
+
+eg 3
+er 22
+nx
+
+eg 3
+er 23
+nx
+
+eg 3
+er 24
+nx
+
+eg 3
+er 30
+nx
+
+eg 3
+er 31
+nx
+
+eg 3
+er 32
+nx
+
+eg 3
+er 33
+nx
+
+eg 3
+er 34
+nx
+
+eg 3
+er 40
+nx
+
+eg 3
+er 41
+nx
+
+eg 3
+er 42
+nx
+
+eg 3
+er 43
+nx
+
+eg 3
+er 44
+nx
+
+eg 1
+br

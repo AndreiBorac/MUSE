@@ -1,0 +1,55 @@
+.macro EQC 2 EZ , .arg_1 0- + .arg_2 ;
+.macro REPORT 1 .invoke :emit @0 .arg_1 = %! ;
+
+.defer :main
+.defer :exit
+
+.frame :start
+{
+  .invoke :main @0 ;
+  .invoke :exit @0 ;
+}
+
+.frame :exit
+{
+  .trap 1 ;
+}
+
+.frame :read
+{
+  .trap 2 ;
+  .return @0
+}
+
+.frame :emit %n!
+{
+  . , %n ;
+  .trap 3 ;
+  .return @0
+}
+
+.const :FST 1
+.const :SND 2
+.const :TRD 3
+
+.frame :main
+{
+  .scope :_
+    z = %TEMP!
+    7 = %bozo!
+    ;
+  {
+    .invoke :emit @0 100 = %TEMP + 3 ^ 5 = %! ;
+    
+    .if EQC %bozo 7
+    {
+      REPORT 1
+    }
+    .else
+    {
+      REPORT 0
+    }
+  }
+  
+  .return @0
+}

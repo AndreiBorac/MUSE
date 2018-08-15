@@ -1,0 +1,38 @@
+.defer :main
+.defer :exit
+
+.frame :start
+{
+  .invoke :main @0 ;
+  .invoke :exit @0 ;
+}
+
+.frame :exit
+{
+  .trap 1 ;
+}
+
+.frame :read
+{
+  .trap 2 ;
+  .return @0
+}
+
+.frame :emit %n!
+{
+  . , %n ;
+  .trap 3 ;
+  .return @0
+}
+
+.const :value_base 1000000000
+.const :value_more 0
+
+.frame :main
+{
+  .scope :_ :value_base = %n! +:value_more = %n! ;
+  {
+    .invoke :emit @1 ;
+    .return @0
+  }
+}
